@@ -1,0 +1,65 @@
+BEGIN TRANSACTION;
+DROP TABLE IF EXISTS "users";
+CREATE TABLE IF NOT EXISTS "users" (
+	"id"	INTEGER NOT NULL UNIQUE,
+	"username"	TEXT,
+	"password"	TEXT,
+	"session_id"	TEXT,
+	PRIMARY KEY("id" AUTOINCREMENT)
+);
+DROP TABLE IF EXISTS "template_workouts";
+CREATE TABLE IF NOT EXISTS "template_workouts" (
+	"id"	INTEGER NOT NULL UNIQUE,
+	"name"	TEXT,
+	"user_id"	INTEGER,
+	PRIMARY KEY("id" AUTOINCREMENT)
+);
+DROP TABLE IF EXISTS "template_sessions";
+CREATE TABLE IF NOT EXISTS "template_sessions" (
+	"id"	INTEGER NOT NULL UNIQUE,
+	"name"	TEXT,
+	"user_id"	INTEGER,
+	"template_workout_id"	INTEGER,
+	PRIMARY KEY("id" AUTOINCREMENT)
+);
+DROP TABLE IF EXISTS "template_exercises";
+CREATE TABLE IF NOT EXISTS "template_exercises" (
+	"id"	INTEGER NOT NULL UNIQUE,
+	"name"	TEXT,
+	"user_id"	INTEGER,
+	"template_session_id"	INTEGER,
+	PRIMARY KEY("id" AUTOINCREMENT)
+);
+DROP TABLE IF EXISTS "real_workouts";
+CREATE TABLE IF NOT EXISTS "real_workouts" (
+	"id"	INTEGER NOT NULL UNIQUE,
+	"start_date"	TEXT,
+	"finish_date"	INTEGER,
+	"template_workout_id"	INTEGER,
+	PRIMARY KEY("id" AUTOINCREMENT)
+);
+DROP TABLE IF EXISTS "real_sets";
+CREATE TABLE IF NOT EXISTS "real_sets" (
+	"id"	INTEGER NOT NULL UNIQUE,
+	"reps"	INTEGER,
+	"weight"	INTEGER,
+	"real_exercise_id"	INTEGER,
+	PRIMARY KEY("id" AUTOINCREMENT)
+);
+DROP TABLE IF EXISTS "real_sessions";
+CREATE TABLE IF NOT EXISTS "real_sessions" (
+	"id"	INTEGER NOT NULL UNIQUE,
+	"template_session_id"	INTEGER,
+	"real_workout_id"	INTEGER,
+	"start_date"	TEXT,
+	"finish_date"	TEXT,
+	PRIMARY KEY("id" AUTOINCREMENT)
+);
+DROP TABLE IF EXISTS "real_exercises";
+CREATE TABLE IF NOT EXISTS "real_exercises" (
+	"id"	INTEGER NOT NULL UNIQUE,
+	"template_exercise_id"	INTEGER,
+	"real_session_id"	INTEGER,
+	PRIMARY KEY("id" AUTOINCREMENT)
+);
+COMMIT;
