@@ -37,6 +37,7 @@ func RegisterAuthRoutes(r *gin.Engine, db *sql.DB) {
 			if err == sql.ErrNoRows {
 				c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid username or password"})
 			} else {
+				log.Printf("Database error: %v", err)
 				c.JSON(http.StatusInternalServerError, gin.H{"error": "Database error"})
 			}
 			return
