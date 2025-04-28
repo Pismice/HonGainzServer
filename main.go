@@ -53,6 +53,18 @@ func main() {
 		c.JSON(http.StatusOK, gin.H{"nb_users": "9000"})
 	})
 
-	// Start the server
-	r.Run(":8080")
+	// Start an HTTP server to redirect traffic to HTTPS
+	go func() {
+		if err := http.ListenAndServe(":80", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			http.Redirect(w, r, "https://"+r.Host+r.RequestURI, http.StatusMovedPermanently)
+		})); err != nil {
+			log.Fatal("Failed to start HTTP redirect server:", err)
+		}
+	}()
+
+	// Start the HTTPS server
+	err = r.RunTLS(":443", "cert.pem", "key.pem")
+	if err != nil {
+		log.Fatal("Failed to start HTTPS server:", err)
+	}
 }
