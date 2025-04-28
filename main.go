@@ -32,6 +32,17 @@ func main() {
 		AllowHeaders: []string{"Content-Type", "Authorization"},
 	}))
 
+	// Add a middleware to log errors
+	r.Use(gin.Recovery())
+	r.Use(func(c *gin.Context) {
+		c.Next()
+		if len(c.Errors) > 0 {
+			for _, e := range c.Errors {
+				log.Printf("[ERROR] %s", e.Error())
+			}
+		}
+	})
+
 	// Register authentication routes
 	auth.RegisterAuthRoutes(r, db)
 
