@@ -8,6 +8,7 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"golang.org/x/crypto/bcrypt"
 )
 
 func generateSessionID() string {
@@ -17,6 +18,34 @@ func generateSessionID() string {
 		log.Fatal("Failed to generate session ID:", err)
 	}
 	return hex.EncodeToString(bytes)
+}
+
+// GenerateSalt creates a random salt for password hashing
+func GenerateSalt() (string, error) {
+	bytes := make([]byte, 16)
+	_, err := rand.Read(bytes)
+	if err != nil {
+		return "", err
+	}
+	return hex.EncodeToString(bytes), nil
+}
+
+// HashPassword hashes a plain text password with a salt
+func HashPassword(password string) (string, string, error) {
+	salt, err := GenerateSalt()
+	if err != nil {
+		return "", "", err
+	}
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password+salt), bcrypt.DefaultCost)
+	if err != nil {
+		return "", "", err
+	}
+	return string(hashedPassword), salt, nil
+}
+
+// CheckPassword compares a hashed password with a plain text password and salt
+func CheckPassword(hashedPassword, password, salt string) error {
+	return bcrypt.CompareHashAndPassword([]byte(hashedPassword), []byte(password+salt))
 }
 
 func RegisterAuthRoutes(r *gin.Engine, db *sql.DB) {
@@ -31,8 +60,8 @@ func RegisterAuthRoutes(r *gin.Engine, db *sql.DB) {
 			return
 		}
 
-		var storedPassword string
-		err := db.QueryRow("SELECT password FROM users WHERE username = ?", credentials.Username).Scan(&storedPassword)
+		var storedPassword, salt string
+		err := db.QueryRow("SELECT password, salt FROM users WHERE username = ?", credentials.Username).Scan(&storedPassword, &salt)
 		if err != nil {
 			if err == sql.ErrNoRows {
 				c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid username or password"})
@@ -43,7 +72,7 @@ func RegisterAuthRoutes(r *gin.Engine, db *sql.DB) {
 			return
 		}
 
-		if storedPassword != credentials.Password {
+		if err := CheckPassword(storedPassword, credentials.Password, salt); err != nil {
 			c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid username or password"})
 			return
 		}
@@ -79,7 +108,13 @@ func RegisterAuthRoutes(r *gin.Engine, db *sql.DB) {
 			return
 		}
 
-		_, err = db.Exec("INSERT INTO users (username, password) VALUES (?, ?)", credentials.Username, credentials.Password)
+		hashedPassword, salt, err := HashPassword(credentials.Password)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to hash password"})
+			return
+		}
+
+		_, err = db.Exec("INSERT INTO users (username, password, salt) VALUES (?, ?, ?)", credentials.Username, hashedPassword, salt)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to register user"})
 			return

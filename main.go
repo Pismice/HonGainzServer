@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"log"
 	"net/http"
+	"os"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
@@ -15,6 +16,9 @@ import (
 	"hongym/stats" // Added import for stats
 	"hongym/template"
 )
+
+// Set useHTTPS based on the environment variable "HON_GYM_PROD"
+var useHTTPS = os.Getenv("HON_GYM_PROD") != ""
 
 func main() {
 	db, err := sql.Open("sqlite3", "test.db")
@@ -64,18 +68,25 @@ func main() {
 		c.JSON(http.StatusOK, gin.H{"nb_users": "9000"})
 	})
 
-	// Start an HTTP server to redirect traffic to HTTPS
-	go func() {
-		if err := http.ListenAndServe(":80", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			http.Redirect(w, r, "https://"+r.Host+r.RequestURI, http.StatusMovedPermanently)
-		})); err != nil {
-			log.Fatal("Failed to start HTTP redirect server:", err)
+	if useHTTPS {
+		// Start an HTTP server to redirect traffic to HTTPS
+		go func() {
+			if err := http.ListenAndServe(":80", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				http.Redirect(w, r, "https://"+r.Host+r.RequestURI, http.StatusMovedPermanently)
+			})); err != nil {
+				log.Fatal("Failed to start HTTP redirect server:", err)
+			}
+		}()
+		// Start the HTTPS server
+		err = r.RunTLS(":443", "cert.pem", "key.pem")
+		if err != nil {
+			log.Fatal("Failed to start HTTPS server:", err)
 		}
-	}()
-
-	// Start the HTTPS server
-	err = r.RunTLS(":443", "cert.pem", "key.pem")
-	if err != nil {
-		log.Fatal("Failed to start HTTPS server:", err)
+	} else {
+		// Start the HTTP server
+		err = r.Run(":8080")
+		if err != nil {
+			log.Fatal("Failed to start HTTP server:", err)
+		}
 	}
 }
