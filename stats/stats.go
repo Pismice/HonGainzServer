@@ -65,4 +65,46 @@ func RegisterStatsRoutes(r *gin.RouterGroup, db *sql.DB) {
 			"weights":              weights,
 		})
 	})
+
+	// Handler to get all real_sessions of a user
+	r.GET("/stats/real-sessions", func(c *gin.Context) {
+		userID := c.GetInt("user_id")
+
+		// Updated query to join with template_sessions and retrieve the name
+		rows, err := db.Query(`
+			SELECT rs.id, rs.template_session_id, rs.real_workout_id, rs.start_date, rs.finish_date, ts.name
+			FROM real_sessions rs
+			LEFT JOIN template_sessions ts ON rs.template_session_id = ts.id
+			WHERE rs.user_id = ?`, userID)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve real sessions"})
+			return
+		}
+
+		defer rows.Close()
+
+		// Updated to include template_session name
+		var realSessions []map[string]interface{}
+		for rows.Next() {
+			var id, templateSessionID, realWorkoutID sql.NullInt64
+			var startDate, finishDate, templateSessionName sql.NullString
+			if err := rows.Scan(&id, &templateSessionID, &realWorkoutID, &startDate, &finishDate, &templateSessionName); err != nil {
+				c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to parse real sessions"})
+				return
+			}
+			realSessions = append(realSessions, map[string]interface{}{
+				"id":                  id.Int64,
+				"template_session_id": templateSessionID.Int64,
+				"real_workout_id":     realWorkoutID.Int64,
+				"start_date":          startDate.String,
+				"finish_date":         finishDate.String,
+				"name":                templateSessionName.String,
+			})
+		}
+
+		// Return all real_sessions
+		c.JSON(http.StatusOK, gin.H{
+			"real_sessions": realSessions,
+		})
+	})
 }
