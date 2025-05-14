@@ -14,7 +14,7 @@ func RegisterStatsRoutes(r *gin.RouterGroup, db *sql.DB) {
 		userID := c.GetInt("user_id")
 
 		// Query to find the maximum weight for the given template_exercise
-		var maxWeight sql.NullInt64
+		var maxWeight sql.NullFloat64
 		err := db.QueryRow(`
 			SELECT MAX(rs.weight)
 			FROM real_sets rs
@@ -28,7 +28,7 @@ func RegisterStatsRoutes(r *gin.RouterGroup, db *sql.DB) {
 		// Return the maximum weight or null if no records exist
 		c.JSON(http.StatusOK, gin.H{
 			"template_exercise_id": templateExerciseID,
-			"max_weight":           maxWeight.Int64,
+			"max_weight":           maxWeight.Float64,
 		})
 	})
 
@@ -49,9 +49,9 @@ func RegisterStatsRoutes(r *gin.RouterGroup, db *sql.DB) {
 		defer rows.Close()
 
 		// Collect all weights
-		var weights []int64
+		var weights []float64
 		for rows.Next() {
-			var weight int64
+			var weight float64
 			if err := rows.Scan(&weight); err != nil {
 				c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to parse weights"})
 				return

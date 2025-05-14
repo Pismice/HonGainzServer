@@ -12,9 +12,9 @@ func RegisterExerciseRoutes(r *gin.RouterGroup, db *sql.DB) {
 	// Register a new set for a real exercise
 	r.POST("/register-set", func(c *gin.Context) {
 		var payload struct {
-			RealExerciseID int `json:"real_exercise_id" binding:"required"`
-			Reps           int `json:"reps" binding:"required"`
-			Weight         int `json:"weight" binding:"required"`
+			RealExerciseID int     `json:"real_exercise_id" binding:"required"`
+			Reps           int     `json:"reps" binding:"required"`
+			Weight         float64 `json:"weight" binding:"required"`
 		}
 
 		// Bind JSON input to the payload struct
