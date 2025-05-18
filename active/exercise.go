@@ -56,4 +56,27 @@ func RegisterExerciseRoutes(r *gin.RouterGroup, db *sql.DB) {
 
 		c.JSON(http.StatusOK, gin.H{"message": "Exercise finished successfully"})
 	})
+
+	// Get the number of real_sets for a given real_exercise_id
+	r.GET("/real-sets/count/:real_exercise_id", func(c *gin.Context) {
+		realExerciseID := c.Param("real_exercise_id")
+		userID := c.GetInt("user_id")
+
+		// Query to count the number of real_sets
+		var count int
+		err := db.QueryRow(`
+			SELECT COUNT(*)
+			FROM real_sets
+			WHERE real_exercise_id = ? AND user_id = ?`,
+			realExerciseID, userID).Scan(&count)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve count of real_sets"})
+			return
+		}
+
+		c.JSON(http.StatusOK, gin.H{
+			"real_exercise_id": realExerciseID,
+			"real_sets_count":  count,
+		})
+	})
 }
