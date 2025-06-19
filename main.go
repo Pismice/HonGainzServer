@@ -71,7 +71,8 @@ func main() {
 	if useHTTPS {
 		// Start an HTTP server to redirect traffic to HTTPS
 		go func() {
-			if err := http.ListenAndServe(":80", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			// TODO change the port to 80 or redirect it somehow via nginx
+			if err := http.ListenAndServe(":3373", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				http.Redirect(w, r, "https://"+r.Host+r.RequestURI, http.StatusMovedPermanently)
 			})); err != nil {
 				log.Fatal("Failed to start HTTP redirect server:", err)
