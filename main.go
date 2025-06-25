@@ -28,6 +28,8 @@ func main() {
 	defer db.Close()
 
 	r := gin.Default()
+	r.SetTrustedProxies(nil) // Désactive la confiance envers tout proxy
+
 
 	// Configure CORS middleware
 	r.Use(cors.New(cors.Config{
@@ -70,14 +72,14 @@ func main() {
 
 	if useHTTPS {
 		// Start an HTTP server to redirect traffic to HTTPS
-		go func() {
-			// TODO change the port to 80 or redirect it somehow via nginx
-			if err := http.ListenAndServe(":3373", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				http.Redirect(w, r, "https://"+r.Host+r.RequestURI, http.StatusMovedPermanently)
-			})); err != nil {
-				log.Fatal("Failed to start HTTP redirect server:", err)
-			}
-		}()
+		// go func() {
+		// 	// TODO change the port to 80 or redirect it somehow via nginx
+		// 	if err := http.ListenAndServe(":3373", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// 		http.Redirect(w, r, "https://"+r.Host+r.RequestURI, http.StatusMovedPermanently)
+		// 	})); err != nil {
+		// 		log.Fatal("Failed to start HTTP redirect server:", err)
+		// 	}
+		// }()
 		// Start the HTTPS server
 		err = r.RunTLS(":443", "cert.pem", "key.pem")
 		if err != nil {
@@ -85,9 +87,9 @@ func main() {
 		}
 	} else {
 		// Start the HTTP server
-		err = r.Run(":8080")
-		if err != nil {
-			log.Fatal("Failed to start HTTP server:", err)
-		}
+		//err = r.Run(":8080")
+		//if err != nil {
+		//	log.Fatal("Failed to start HTTP server:", err)
+		//}
 	}
 }
